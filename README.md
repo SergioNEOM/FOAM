@@ -1,4 +1,4 @@
-## FOAM
-# Fund Of Additional Materials
-tyny web-service for school's education repository
+# FOAM - Fund Of Additional Materials
+
+tiny web-service for school's education repository
 
