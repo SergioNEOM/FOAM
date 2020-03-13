@@ -1,7 +1,10 @@
 package router
 
-//import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+)
 
+// StartRouter - привязать хэндлеры и запусить роутер
 func StartRouter() {
 	r := gin.Default()
 	gin.SetMode(gin.ReleaseMode) //- убрать DEBUG mode
@@ -9,15 +12,31 @@ func StartRouter() {
 	//
 	// ?? router.Static("/assets", "../assets")
 	//
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
+	r.GET("/", rootHandler)
+	r.GET("/favicon.ico", func(c *gin.Context) {
+		c.File("./assets/favicon.ico")
 	})
-	r.GET("/", func(c *gin.Context) {
-		c.String(200,"<h1>Hello, </h1><br><h2><world</h2>"})
-	})
+	// показать список материалов
+	r.GET("/stuff", stuffListHandler)
 
 	r.Run(":8888") // listen and serve on localhost:8888
+}
+
+//---
+
+func rootHandler(c *gin.Context) {
+	c.String(200, "main page for authorized users")
+	// parse template for main page
+}
+
+//показать список материалов
+func stuffListHandler(c *gin.Context) {
+	c.String(200, "stuff list")
+	//
+	// get stuff list from DB
+	//
+	// parse template for stuff list
+	//
+	// ExecuteTemplate with param <StuffList>
 
 }

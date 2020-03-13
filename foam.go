@@ -9,6 +9,6 @@ import (
 func main() {
 	fmt.Println("FOAM: listen and serve on: http://localhost:8888")
 
-	router.Startrouter()
+	router.StartRouter()
 
 }
