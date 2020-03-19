@@ -2,12 +2,11 @@ package models
 
 import (
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	//	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
-/*
-  Stuff  - обобщенная единица хранения учебных материалов в БД
-*/
+// Stuff  обобщенная единица хранения учебных материалов в БД
+//
 type Stuff struct {
 	gorm.Model
 	// краткое наименование (заголовок)

@@ -1,0 +1,9 @@
+<h1 style="color:#D22">STUFF LIST</h1>
+<div>
+{{ range . }}
+<div class="stuffItem" style="background-color:#CCF" >
+<h2><a href="#">{{ .ShortName }}</a></h2>
+{{ .Description }}
+</div>
+{{ end }}
+</div>
