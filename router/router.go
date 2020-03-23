@@ -14,7 +14,12 @@ func StartRouter() {
 	//
 	//
 	// ?? router.Static("/assets", "../assets")
+	// Статику (картинки, скрипти, стили) будем раздавать
+	// по определенному роуту /static/{file}
+	// r.PathPrefix("/static/").Handler(http.StripPrefix("/static/",
+	//                            http.FileServer(http.Dir("./static/"))))
 	//
+	// not authorized group
 	r.GET("/", rootHandler)
 	r.GET("/favicon.ico", func(c *gin.Context) {
 		c.File("./assets/favicon.ico")
@@ -22,8 +27,8 @@ func StartRouter() {
 	//---------- load templates
 	r.LoadHTMLFiles("./templates/stufflist.tmpl", "./templates/stuffform.tmpl")
 	//----------
-	// stuff group:
-	stuff := r.Group("/stuff")
+	// stuff group (authorized):
+	stuff := r.Group("/stuff", gin.BasicAuth())
 	// показать список материалов
 	stuff.GET("", stuffListHandler)
 	stuff.GET("/add", stuffAddFormHandler)
@@ -74,7 +79,7 @@ func stuffAddHandler(c *gin.Context) {
 		// redirect to form ?
 	}
 	// save values to DB
-	err := database.Dbase.AddStuff(&models.Stuff{"ShortName": sn, "Description": ds})
+	err := database.Dbase.AddStuff(&models.Stuff{ShortName: sn, Description: ds})
 	if err != nil {
 		// error ?
 		// redirect to form ?
