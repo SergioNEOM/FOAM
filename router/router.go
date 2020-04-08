@@ -1,8 +1,10 @@
 package router
 
 import (
+	"fmt"
+
+	"github.com/SergioNEOM/FOAM/auth"
 	"github.com/SergioNEOM/FOAM/database"
-	"github.com/SergioNEOM/FOAM/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -28,8 +30,10 @@ func StartRouter() {
 	r.LoadHTMLFiles("./templates/stufflist.tmpl", "./templates/stuffform.tmpl")
 	//----------
 	// stuff group (authorized):
-	stuff := r.Group("/stuff", gin.BasicAuth())
+	//	stuff := r.Group("/stuff", gin.BasicAuth(gin.Accounts{"admin": "admin"}))
+	stuff := r.Group("/stuff", auth.CheckToken) // authFunc - заглушка: потом поставить вызов соотв.функции из модуля auth
 	// показать список материалов
+	//stuff.Use(auth)
 	stuff.GET("", stuffListHandler)
 	stuff.GET("/add", stuffAddFormHandler)
 	stuff.POST("/add", stuffAddHandler)
@@ -42,6 +46,19 @@ func StartRouter() {
 
 func rootHandler(c *gin.Context) {
 	c.String(200, "main page for authorized users")
+	// parse template for main page
+}
+
+// Заглушка: потом поставить вызов соотв.функции из модуля auth, которая:
+// 1.проверит, есть ли в куке токен. Нет - редирект на форму логина
+// 2.проверит подпись на токене. Нет - - редирект на форму логина
+// 3.сверит имя в токене с введённым в логин-форме. Не совпадают - редирект на форму логина
+// 4.проверит срок действия токена. Истёк - ПЕРЕВЫПУСК (с соотв.проверками refresh-token)
+// 5.предоставит доступ к ресурсу (return или next.ServeHTTP()? ).
+func authFunc(c *gin.Context) {
+	fmt.Println("--- auth ---")
+	token, err := auth.get()
+	//c.String(200, "auth")
 	// parse template for main page
 }
 
@@ -79,13 +96,14 @@ func stuffAddHandler(c *gin.Context) {
 		// redirect to form ?
 	}
 	// save values to DB
-	err := database.Dbase.AddStuff(&models.Stuff{ShortName: sn, Description: ds})
-	if err != nil {
-		// error ?
-		// redirect to form ?
+	/*	err := database.Dbase.AddStuff(&models.Stuff{ShortName: sn, Description: ds})
+		if err != nil {
+			// error ?
+			// redirect to form ?
 
-	}
-	//c.JSON(200, gin.H{"shortname": sn, "description": ds})
+		}
+	*/
+	c.JSON(200, gin.H{"shortname": sn, "description": ds})
 	// redirect to /stuff
 	c.Redirect(302, "/stuff")
 }
