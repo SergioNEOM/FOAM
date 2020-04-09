@@ -31,7 +31,7 @@ func StartRouter() {
 	//----------
 	// stuff group (authorized):
 	//	stuff := r.Group("/stuff", gin.BasicAuth(gin.Accounts{"admin": "admin"}))
-	stuff := r.Group("/stuff", auth.CheckToken) // authFunc - заглушка: потом поставить вызов соотв.функции из модуля auth
+	stuff := r.Group("/stuff", authFunc(auth.CheckToken)) // authFunc - обёртка для auth.CheckToken
 	// показать список материалов
 	//stuff.Use(auth)
 	stuff.GET("", stuffListHandler)
@@ -55,11 +55,34 @@ func rootHandler(c *gin.Context) {
 // 3.сверит имя в токене с введённым в логин-форме. Не совпадают - редирект на форму логина
 // 4.проверит срок действия токена. Истёк - ПЕРЕВЫПУСК (с соотв.проверками refresh-token)
 // 5.предоставит доступ к ресурсу (return или next.ServeHTTP()? ).
+/*
 func authFunc(c *gin.Context) {
-	fmt.Println("--- auth ---")
-	token, err := auth.get()
-	//c.String(200, "auth")
-	// parse template for main page
+	return func(c *gin.Context) {
+		fmt.Println("--- auth ---")
+		if !auth.CheckToken(c) {
+			fmt.Println("--- auth error ---")
+			//todo: ??? как обработать
+			return // nothing
+		}
+		c.Next()
+		//c.String(200, "auth")
+		// parse template for main page
+	}
+}
+*/
+func authFunc(myhandler func(c *gin.Context) bool) (ginhandler func(c *gin.Context)) {
+	return func(c *gin.Context) {
+		fmt.Println("--- auth ---")
+		if !myhandler(c) {
+			fmt.Println("--- auth error ---")
+			//todo: ??? как обработать
+			//c.AbortWithStatusJSON(200, gin.H{"status": false, "message": "1111111"})
+
+			// return nothing ?
+		}
+		//c.String(200, "auth")
+		// parse template for main page
+	}
 }
 
 //показать список материалов
