@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -20,8 +21,9 @@ type myClaims struct {
 // jwtkey - ключ верификации токенов (ключ сервера)  --- вынести выше?
 func CheckToken(c *gin.Context) bool {
 	// 1.проверить, есть ли в куке токен. Нет - редирект на форму логина
-	tokenStr, err := getToken(c)
+	tokenStr, err := c.Cookie(cookieName)
 	if err != nil {
+		//	если нет куки или токена -
 		// c.Redirect(http.StatusMovedPermanently, "/signin")
 		c.Error(errors.New("No cookies with token")) // записать в журнал
 		c.String(403, "No cookies with token")       //todo: сделать шаблон с выводом ошибки
@@ -36,7 +38,8 @@ func CheckToken(c *gin.Context) bool {
 	})
 	if err != nil || !token.Valid { //проверка !token.Valid паниковала, когда стояла раньше err!=nil в случае ошибки
 		//todo: write to log
-		c.String(403, "Token sign isn't valid")
+		c.Error(err)
+		c.String(403, "Token signature isn't valid")
 		c.AbortWithStatus(403) //c.Status(http.StatusUnauthorized)
 		return false
 	}
@@ -52,10 +55,8 @@ func CheckToken(c *gin.Context) bool {
 	// ?
 
 	// 4.проверит срок действия токена. Истёк - ПЕРЕВЫПУСК (с соотв.проверками refresh-token)
-
-	tcla := time.Unix(claims.StandardClaims.ExpiresAt, 0)
-	t := time.Now()
-	if t.After(tcla) {
+	legal := claims.StandardClaims.VerifyExpiresAt(time.Now().Unix(), true)
+	if !legal {
 		c.String(401, "Token expired! Go to refresh")
 		c.AbortWithStatus(401) //todo: redirect !!!!!!
 		return false
@@ -64,12 +65,36 @@ func CheckToken(c *gin.Context) bool {
 	return true
 }
 
-// GetToken получить токен из cookie
-func getToken(c *gin.Context) (string, error) {
-	co, err := c.Cookie(cookieName)
+// NewToken create new JSON Web token
+//todo: если хранить несколько параметров в токене, предусмотреть их передачу вместо логина
+func NewToken(login string, expire int64) string {
+	// Устанавливаем набор параметров для токена
+	claims := &myClaims{}
+	claims.Login = login
+	claims.StandardClaims.ExpiresAt = expire
+	claims.StandardClaims.Issuer = "FOAM"
+	// Создаем новый токен
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenStr, err := token.SignedString([]byte(secretFOAMKey))
+
+	// Отдаем токен клиенту
+	//	w.Write([]byte(tokenString))
 	if err != nil {
-		//	если нет куки или токена - возвратить пустую строку
-		return "", err
+		//todo: в журнал надо
+		fmt.Printf("Func NewToken ERROR: %v\n", err)
+		return ""
 	}
-	return co, nil
+	return tokenStr
+}
+
+func SetNewToken(c *gin.Context) {
+	//todo: заменить литерал "admin" на реальное значение из формы login-form
+	//todo: domain from config
+	//todo: expired: time.Now().Add(time.Minute * 15).Unix()
+	//exp := time.Now().Add(time.Hour).Unix()
+	exp := time.Now().Add(time.Minute * 5).Unix()
+	tokenStr := NewToken("admin", exp)
+	if tokenStr != "" {
+		c.SetCookie(cookieName, tokenStr, 3600 /*todo: ????*/, "/", "0.0.0.0", false, true)
+	}
 }

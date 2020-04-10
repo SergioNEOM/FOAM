@@ -16,18 +16,36 @@ func StartRouter() {
 	//
 	//
 	// ?? router.Static("/assets", "../assets")
-	// Статику (картинки, скрипти, стили) будем раздавать
-	// по определенному роуту /static/{file}
-	// r.PathPrefix("/static/").Handler(http.StripPrefix("/static/",
-	//                            http.FileServer(http.Dir("./static/"))))
 	//
 	// not authorized group
 	r.GET("/", rootHandler)
+	r.GET("/refreshtoken", refreshToken)
 	r.GET("/favicon.ico", func(c *gin.Context) {
 		c.File("./assets/favicon.ico")
 	})
+	// Статику (картинки, скрипти, стили) будем раздавать
+	// по определенному роуту /static/:file
+	// если файл не найден, вернется статус 404
+	r.Static("/static/", "./assets")
+	// конкретные файлы
+	/*
+		r.GET("/static/:file", func(c *gin.Context) {
+			fname := "./assets/" + c.Param("file")
+			fmt.Printf("requeststatic file: %v\n", fname)
+			fi, err := os.Lstat(fname)
+			if err == nil {
+				if fi.Mode().IsRegular() {
+					c.File(fname)
+				}
+			} else {
+				c.Error(err)
+				//log.Fatal(err)
+			}
+		})
+	*/
 	//---------- load templates
-	r.LoadHTMLFiles("./templates/stufflist.tmpl", "./templates/stuffform.tmpl")
+	//r.LoadHTMLFiles("./templates/meta.tmpl", "./templates/stufflist.tmpl", "./templates/stuffform.tmpl")
+	r.LoadHTMLGlob("./templates/*.tmpl")
 	//----------
 	// stuff group (authorized):
 	//	stuff := r.Group("/stuff", gin.BasicAuth(gin.Accounts{"admin": "admin"}))
@@ -49,55 +67,34 @@ func rootHandler(c *gin.Context) {
 	// parse template for main page
 }
 
+//----
+func refreshToken(c *gin.Context) {
+	auth.SetNewToken(c)
+}
+
 // Заглушка: потом поставить вызов соотв.функции из модуля auth, которая:
 // 1.проверит, есть ли в куке токен. Нет - редирект на форму логина
 // 2.проверит подпись на токене. Нет - - редирект на форму логина
 // 3.сверит имя в токене с введённым в логин-форме. Не совпадают - редирект на форму логина
 // 4.проверит срок действия токена. Истёк - ПЕРЕВЫПУСК (с соотв.проверками refresh-token)
 // 5.предоставит доступ к ресурсу (return или next.ServeHTTP()? ).
-/*
-func authFunc(c *gin.Context) {
-	return func(c *gin.Context) {
-		fmt.Println("--- auth ---")
-		if !auth.CheckToken(c) {
-			fmt.Println("--- auth error ---")
-			//todo: ??? как обработать
-			return // nothing
-		}
-		c.Next()
-		//c.String(200, "auth")
-		// parse template for main page
-	}
-}
-*/
-func authFunc(myhandler func(c *gin.Context) bool) (ginhandler func(c *gin.Context)) {
+
+func authFunc(myhandler func(c *gin.Context) bool) func(*gin.Context) {
 	return func(c *gin.Context) {
 		fmt.Println("--- auth ---")
 		if !myhandler(c) {
 			fmt.Println("--- auth error ---")
 			//todo: ??? как обработать
-			//c.AbortWithStatusJSON(200, gin.H{"status": false, "message": "1111111"})
-
 			// return nothing ?
+			//c.Redirect(307, "/")
 		}
-		//c.String(200, "auth")
-		// parse template for main page
 	}
 }
 
 //показать список материалов
 func stuffListHandler(c *gin.Context) {
-
 	obj := *database.Dbase.GetStuffList()
 	c.HTML(200, "stufflist.tmpl", obj) // !! Предварительно требует LoadHTMLFiles(...)
-
-	/*	tmpl := template.Must(template.ParseFiles("./templates/stufflist.tmpl"))
-
-		err := tmpl.Execute(c.Writer, obj)
-		if err != nil {
-			log.Fatalf("template execution: %s", err)
-		}
-	*/
 }
 
 // stuffAddFormHandler отображает форму для добавления записи о материале
