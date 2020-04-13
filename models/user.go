@@ -11,7 +11,7 @@ type User struct {
 	Token string `gorm:"type:varchar(180);unique_index" json:"token"`
 	//Login	string
 	//Pass	string
-	//Admin	bool
+	//Role	string	// "admin", "user"
 	// the user name or nick
 	Name string `gorm:"type:text" form:"name" query:"name" json:"name"`
 }
