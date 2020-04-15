@@ -4,7 +4,10 @@ import (
 	"fmt"
 
 	"github.com/SergioNEOM/FOAM/auth"
+	"github.com/SergioNEOM/FOAM/common"
 	"github.com/SergioNEOM/FOAM/database"
+	"github.com/SergioNEOM/FOAM/models"
+	"github.com/SergioNEOM/FOAM/templates"
 
 	"github.com/gin-gonic/gin"
 )
@@ -46,6 +49,11 @@ func StartRouter() {
 	//---------- load templates
 	//r.LoadHTMLFiles("./templates/meta.tmpl", "./templates/stufflist.tmpl", "./templates/stuffform.tmpl")
 	r.LoadHTMLGlob("./templates/*.tmpl")
+
+	//
+	r.GET("/message", viewMessage)
+	//
+
 	//----------
 	// stuff group (authorized):
 	//	stuff := r.Group("/stuff", gin.BasicAuth(gin.Accounts{"admin": "admin"}))
@@ -55,8 +63,16 @@ func StartRouter() {
 	stuff.GET("", stuffListHandler)
 	stuff.GET("/add", stuffAddFormHandler)
 	stuff.POST("/add", stuffAddHandler)
-	//-------------
 
+	//-------------
+	admin := r.Group("/users", authFunc(auth.CheckToken))
+	//
+	admin.GET("", UsersListHandler)
+	admin.GET("/add", UsersAddFormHandler)
+	admin.POST("/add", UsersAddHandler)
+	admin.POST("/del/:id", UsersDelHandler)
+
+	//===============================
 	r.Run(":8888") // listen and serve on localhost:8888
 }
 
@@ -87,13 +103,14 @@ func authFunc(myhandler func(c *gin.Context) bool) func(*gin.Context) {
 			//todo: ??? как обработать
 			// return nothing ?
 			//c.Redirect(307, "/")
+			common.SetMessage(c, common.MessageError, "Authorization failed", "/")
 		}
 	}
 }
 
 //показать список материалов
 func stuffListHandler(c *gin.Context) {
-	obj := *database.Dbase.GetStuffList()
+	obj := *database.GetStuffList()
 	c.HTML(200, "stufflist.tmpl", obj) // !! Предварительно требует LoadHTMLFiles(...)
 }
 
@@ -126,4 +143,62 @@ func stuffAddHandler(c *gin.Context) {
 	c.JSON(200, gin.H{"shortname": sn, "description": ds})
 	// redirect to /stuff
 	c.Redirect(302, "/stuff")
+}
+
+// UsersListHandler - показать список пользователей
+func UsersListHandler(c *gin.Context) {
+
+}
+
+// UsersAddFormHandler показать форму для внесения данных пользователя при добавлении
+func UsersAddFormHandler(c *gin.Context) {
+	c.HTML(200, "newuserform.tmpl", nil) // !! Предварительно требует LoadHTMLFiles(...)
+}
+
+// UsersAddHandler - получить данные из формы и добавить пользователя
+func UsersAddHandler(c *gin.Context) {
+	// get values from form params
+	lo, ok := c.GetPostForm("login")
+	if !ok {
+		// error ?
+		// redirect to form ?
+	}
+	pa, ok := c.GetPostForm("passwd")
+	if !ok {
+		// error ?
+		// redirect to form ?
+	}
+	na, ok := c.GetPostForm("Uname")
+	if !ok {
+		// error ?
+		// redirect to form ?
+	}
+	ro, ok := c.GetPostForm("Urole") // int ?
+	if !ok {
+		// error ?
+		// redirect to form ?
+	}
+	fmt.Printf("[NEW USER] Dbase: %v\n", database.Dbase)
+	fmt.Println("[NEW USER] ", lo, pa, na, ro)
+
+	// save values to DB
+	database.NewUser(models.User{Login: lo, Pass: pa, Role: ro, Name: na})
+
+	c.Redirect(307, "/users")
+}
+
+// UsersDelHandler удалить указанного пользователя
+func UsersDelHandler(c *gin.Context) {
+
+}
+
+func viewMessage(c *gin.Context) {
+	fmt.Println("[viewMessage] --")
+	v := c.Value(common.MesKeyName)
+	fmt.Printf("[viewMessage] --- %v", v)
+	if v != nil {
+		m := v.(templates.MessageBox)
+		fmt.Printf("[viewMessage] ---- %v", m)
+		c.HTML(200, "messagebox.tmpl", m)
+	}
 }

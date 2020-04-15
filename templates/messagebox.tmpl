@@ -1,0 +1,18 @@
+{{ template "meta" }}
+<div class="messagebox">
+    <div class="messagebody">
+        <div class="messageicon">
+            {{ if .MesQuestion }}
+                <img src="/static/question.png"></img>
+            {{ else if .MesWarning }}
+                <img src="/static/attention.png"></img>
+            {{ else if .MesError }}
+                <img src="/static/stop.png"></img>
+            {{ end }}
+        </div>
+        &nbsp;
+        <div class="messagetext">{{ .MessageText }}</div>
+    </div>
+    <a class="messagebut" href="{{ .MessageHref }}">ОК</a>
+</div>
+</body></html>

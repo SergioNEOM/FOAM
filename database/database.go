@@ -1,6 +1,8 @@
 package database
 
 import (
+	"log"
+
 	"github.com/jinzhu/gorm"
 
 	"github.com/SergioNEOM/FOAM/config"
@@ -10,53 +12,35 @@ import (
 )
 
 // GDB wrap  gorm.DB - main database of app
-type GDB struct {
+/*type GDB struct {
 	DB *gorm.DB
 }
+*/
 
-var Dbase *GDB
+//
+var Dbase *gorm.DB
 
 func init() {
 	// init DB
 	// dev mode only:
-	Dbase, err := New(config.Conf.DBDialect, config.Conf.DBConnStr)
+	log.Printf("[database init] %v, %v\n", config.Conf.DBDialect, config.Conf.DBConnStr)
+	// в зависимости от диалекта проинициализировать параметры и открыть БД
+	Dbase, err := gorm.Open(config.Conf.DBDialect, config.Conf.DBConnStr)
 
 	// release mode: 1) get conn params 2) Dbase, err := New(par1,par2)
 
-	if err != nil {
+	if err != nil || Dbase == nil {
+		log.Fatal("Dbase not opened")
 		panic(err)
 	}
-
 	defer Dbase.Close()
-}
-
-// New create a new instance of gorm.DB, open it and return *GDB
-func New(dialect, connstr string) (*GDB, error) {
-	// в зависимости от диалекта проинициализировать параметры и открыть БД
-	db, err := gorm.Open(dialect, connstr)
-	if err != nil {
-		return nil, err
-	}
-	// if dialect == ...
 	//
-	if dialect == "sqlite3" {
+	if config.Conf.DBDialect == "sqlite3" {
 		// no concurrent connections
 		//( https://github.com/mattn/go-sqlite3/issues/274 )
-		db.DB().SetMaxOpenConns(1)
+		Dbase.DB().SetMaxOpenConns(1)
 	}
 	//
 	//------------------------------------
-	db.AutoMigrate(&models.User{}, &models.Stuff{})
-	//------------------------------------
-
-	return &GDB{DB: db}, nil
-}
-
-// Close closes DB
-func (g *GDB) Close() {
-	g.DB.Close()
-}
-
-func (g *GDB) AddStuff(s *models.Stuff) error {
-	return g.DB.Create(s).Error
+	Dbase.AutoMigrate(&models.User{}, &models.Stuff{})
 }

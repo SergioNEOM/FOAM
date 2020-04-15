@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/SergioNEOM/FOAM/common"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
@@ -26,8 +28,9 @@ func CheckToken(c *gin.Context) bool {
 		//	если нет куки или токена -
 		// c.Redirect(http.StatusMovedPermanently, "/signin")
 		c.Error(errors.New("No cookies with token")) // записать в журнал
-		c.String(403, "No cookies with token")       //todo: сделать шаблон с выводом ошибки
-		c.AbortWithStatus(403)
+		//c.String(403, "No cookies with token")       //todo: сделать шаблон с выводом ошибки
+		//c.AbortWithStatus(403)
+		//common.SetMessage(c, common.MessageError, "No cookies with token", "/") - в обёртке вызывается
 		return false
 	}
 	//
@@ -39,8 +42,9 @@ func CheckToken(c *gin.Context) bool {
 	if err != nil || !token.Valid { //проверка !token.Valid паниковала, когда стояла раньше err!=nil в случае ошибки
 		//todo: write to log
 		c.Error(err)
-		c.String(403, "Token signature isn't valid")
-		c.AbortWithStatus(403) //c.Status(http.StatusUnauthorized)
+		//c.String(403, "Token signature isn't valid")
+		//c.AbortWithStatus(403) //c.Status(http.StatusUnauthorized)
+		common.SetMessage(c, common.MessageError, "Token signature isn't valid", "/")
 		return false
 	}
 	// payload claims

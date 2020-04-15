@@ -6,7 +6,7 @@ import (
 
 // GetStuffList get all stuff from DB
 //
-func (g *GDB) GetStuffList() *[]models.Stuff {
+func GetStuffList() *[]models.Stuff {
 
 	//s := &[]models.Stuff{}
 
@@ -20,4 +20,9 @@ func (g *GDB) GetStuffList() *[]models.Stuff {
 	// release mode - get stuff list from DB
 	// g.
 	return s // !!!
+}
+
+// AddStuff - добавить материал в БД
+func AddStuff(s *models.Stuff) error {
+	return Dbase.Create(s).Error
 }
