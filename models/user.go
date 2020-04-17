@@ -8,7 +8,7 @@ type User struct {
 	// the user ID
 	ID uint `gorm:"primary_key;unique_index;AUTO_INCREMENT" json:"id"`
 	// the user token
-	Token string `gorm:"type:varchar(180);unique_index" json:"token"`
+	Token string `gorm:"type:varchar(180)" json:"token"` //gorm: ;unique_index
 	Login string
 	Pass  string
 	Role  string // 0-guest, 1-user, 2- ..., 256 - "admin"

@@ -24,5 +24,5 @@ func GetStuffList() *[]models.Stuff {
 
 // AddStuff - добавить материал в БД
 func AddStuff(s *models.Stuff) error {
-	return Dbase.Create(s).Error
+	return DB.Create(s).Error
 }

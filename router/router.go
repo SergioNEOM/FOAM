@@ -6,7 +6,6 @@ import (
 	"github.com/SergioNEOM/FOAM/auth"
 	"github.com/SergioNEOM/FOAM/common"
 	"github.com/SergioNEOM/FOAM/database"
-	"github.com/SergioNEOM/FOAM/models"
 	"github.com/SergioNEOM/FOAM/templates"
 
 	"github.com/gin-gonic/gin"
@@ -68,9 +67,10 @@ func StartRouter() {
 	admin := r.Group("/users", authFunc(auth.CheckToken))
 	//
 	admin.GET("", UsersListHandler)
-	admin.GET("/add", UsersAddFormHandler)
-	admin.POST("/add", UsersAddHandler)
-	admin.POST("/del/:id", UsersDelHandler)
+	//admin.GET("/add", UsersAddFormHandler)
+	//admin.POST("/add", UsersAddHandler)
+	admin.GET("/:action/:id", UserActReqHandler)
+	admin.POST("/:action/:id", UsersActHandler)
 
 	//===============================
 	r.Run(":8888") // listen and serve on localhost:8888
@@ -147,7 +147,9 @@ func stuffAddHandler(c *gin.Context) {
 
 // UsersListHandler - показать список пользователей
 func UsersListHandler(c *gin.Context) {
-
+	u, _ := database.GetAllUsers()
+	//todo: обработка ошибок !
+	c.HTML(200, "userslist.tmpl", &u) // !! Предварительно требует LoadHTMLFiles(...)
 }
 
 // UsersAddFormHandler показать форму для внесения данных пользователя при добавлении
@@ -178,17 +180,33 @@ func UsersAddHandler(c *gin.Context) {
 		// error ?
 		// redirect to form ?
 	}
-	fmt.Printf("[NEW USER] Dbase: %v\n", database.Dbase)
-	fmt.Println("[NEW USER] ", lo, pa, na, ro)
+	//	fmt.Printf("[NEW USER] Dbase: %v\n", database.DB)
+	//	fmt.Println("[NEW USER] ", lo, pa, na, ro)
 
 	// save values to DB
-	database.NewUser(models.User{Login: lo, Pass: pa, Role: ro, Name: na})
+	database.NewUser("", lo, pa, ro, na)
 
 	c.Redirect(307, "/users")
 }
 
-// UsersDelHandler удалить указанного пользователя
-func UsersDelHandler(c *gin.Context) {
+// UserActReqHandler обработать запрос на обработку указанного пользователя (GET)
+func UserActReqHandler(c *gin.Context) {
+	a := c.Param("action")
+	id := c.Param("id")
+	if a == "add" {
+		UsersAddFormHandler(c)
+	}
+	if a == "del" {
+		//todo: показать не сообщение, а форму данных пользователя с кнопкой "Удалить" ?
+		common.SetMessage(c, common.MessageQuestion, "User(id="+id+") will be deleted. Are you sure?", "/users")
+	}
+	if a == "upd" {
+		//todo: показать форму данных пользователя ?
+	}
+}
+
+// UsersActHandler удалить указанного пользователя
+func UsersActHandler(c *gin.Context) {
 
 }
 

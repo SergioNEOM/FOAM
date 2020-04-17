@@ -2,6 +2,7 @@ package database
 
 import (
 	"log"
+	"sync"
 
 	"github.com/jinzhu/gorm"
 
@@ -17,30 +18,47 @@ import (
 }
 */
 
-//
-var Dbase *gorm.DB
+// singletone !
+var DB *gorm.DB
+
+//  safety singletone maker
+var once sync.Once
 
 func init() {
 	// init DB
 	// dev mode only:
 	log.Printf("[database init] %v, %v\n", config.Conf.DBDialect, config.Conf.DBConnStr)
+	DB = GetDB()
 	// в зависимости от диалекта проинициализировать параметры и открыть БД
-	Dbase, err := gorm.Open(config.Conf.DBDialect, config.Conf.DBConnStr)
 
-	// release mode: 1) get conn params 2) Dbase, err := New(par1,par2)
-
-	if err != nil || Dbase == nil {
-		log.Fatal("Dbase not opened")
-		panic(err)
-	}
-	defer Dbase.Close()
+	log.Printf("[database meta]\n %+v \n", DB)
+	//defer Dbase.Close()
 	//
 	if config.Conf.DBDialect == "sqlite3" {
 		// no concurrent connections
 		//( https://github.com/mattn/go-sqlite3/issues/274 )
-		Dbase.DB().SetMaxOpenConns(1)
+		DB.DB().SetMaxOpenConns(1)
 	}
 	//
 	//------------------------------------
-	Dbase.AutoMigrate(&models.User{}, &models.Stuff{})
+	DB.AutoMigrate(&models.User{}, &models.Stuff{})
+	//
+	//------------------------------------
+	// default record
+	//todo: исключить дубли!!!
+	NewUser("", "admin", "admin", "admin", "учетная запись администратора по умолчанию")
+}
+
+//GetDB возвращает указатель на уникальное соединение с БД
+func GetDB() *gorm.DB {
+	once.Do(func() {
+		// обеспечим уникальность (единственность) указателя на БД в пределах приложения - singletone
+		db, err := gorm.Open(config.Conf.DBDialect, config.Conf.DBConnStr)
+		if err != nil || db == nil {
+			log.Fatal("Dbase not opened")
+			return
+		}
+		DB = db
+	})
+	return DB
 }

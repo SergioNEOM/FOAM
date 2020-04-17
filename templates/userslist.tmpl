@@ -1,0 +1,33 @@
+{{ template "meta" }}
+<h1 style="color:#D22">Users</h1>
+<div id="dialog-confirm" title="Attention !">&nbsp;</div>
+<div>
+{{ range . }}
+<div class="userslist">
+<button class="confirm">X</button>
+<h3><a href="/users/upd/{{ .ID }}">{{ .Login }}</a></h3>
+{{ .Name }}&nbsp;{{ .Role }}
+</div>
+{{ end }}
+</div>
+<script>
+  $(".confirm").click( function( event ) {
+    $( "#dialog-confirm" ).html('<p><span class="ui-icon ui-icon-alert" style="float:left; margin:12px 12px 20px 0;"></span>These item will be permanently deleted and cannot be recovered. Are you sure?</p>');
+    $( "#dialog-confirm" ).dialog({
+      position: { my: "left top", at: "center", of: $(this) },
+      resizable: false,
+      height: "auto",
+      width: 400,
+      modal: true,
+      buttons: {
+        "Delete all items": function() {
+          $( this ).dialog( "close" );
+        },
+        Cancel: function() {
+          $( this ).dialog( "close" );
+        }
+      }
+    });
+  } );
+  </script>
+</body></html>
